@@ -303,13 +303,12 @@ onBeforeUnmount(() => {
     radial-gradient(900px 500px at 20% -10%, rgba(160, 40, 30, 0.08), transparent 60%),
     radial-gradient(800px 400px at 90% 10%, rgba(120, 60, 40, 0.1), transparent 55%),
     linear-gradient(180deg, #f5ead0 0%, #ece0b8 50%, #f0e6c4 100%);
-  background-attachment: fixed;
+  background-color: #f0e6c4;
   color: #3d2f1f;
   padding: 28px 16px 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
 }
 
 .page {
