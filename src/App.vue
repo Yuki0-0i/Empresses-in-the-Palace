@@ -94,10 +94,98 @@
             <div class="result-tag">{{ match.tag }}</div>
             <div class="result-score"><span class="score-num">{{ topPercent }}</span><span class="score-unit">% 契合</span></div>
             <p class="result-diff">你和 TA 有 {{ topDiff }} 题选得不一样</p>
-            <p class="result-one-liner">{{ match.oneLiner }}</p>
+            <p class="result-one-liner">{{ match.style }}</p>
             <div class="result-meta">
               <span class="meta-chip">家世：{{ match.family }}</span>
             </div>
+          </div>
+        </div>
+
+        <!-- 场景写照 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">场景写照</h2></div>
+          <div class="scroll-body">
+            <p class="analysis-text scenario">{{ match.scenario }}</p>
+          </div>
+        </div>
+
+        <!-- 五维雷达 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">你的五维雷达</h2></div>
+          <div class="scroll-body">
+            <div class="radar-wrap">
+              <svg :viewBox="'0 0 260 260'" class="radar-svg">
+                <polygon v-for="n in 5" :key="n" :points="gridPoints(n)" class="radar-grid" />
+                <line
+                  v-for="(dim, i) in radarDims"
+                  :key="dim.key"
+                  :x1="cx" :y1="cy"
+                  :x2="point(i, 5, 0).x" :y2="point(i, 5, 0).y"
+                  class="radar-axis"
+                />
+                <polygon :points="radarPoints" class="radar-fill" :fill="match.color" />
+                <circle
+                  v-for="(dim, i) in radarDims"
+                  :key="dim.key"
+                  :cx="point(i, match.profile[i], 0).x"
+                  :cy="point(i, match.profile[i], 0).y"
+                  r="3"
+                  :fill="match.color"
+                />
+              </svg>
+            </div>
+            <div class="radar-labels">
+              <span v-for="dim in radarDims" :key="dim.key" class="radar-label">{{ dim.label }} {{ match.profile[radarDims.indexOf(dim)] }}</span>
+            </div>
+            <p class="radar-note">你的形状 ≈ {{ match.name }}——五维上你最像 TA，但你是你自己。</p>
+          </div>
+        </div>
+
+        <!-- 你在关系里的角色 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">你在关系里是哪种角色</h2></div>
+          <div class="scroll-body">
+            <ul class="bullet-list">
+              <li v-for="(r, i) in match.role" :key="i">{{ r }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 你最像TA的地方 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">你最像 TA 的地方</h2></div>
+          <div class="scroll-body">
+            <ul class="bullet-list accent">
+              <li v-for="(r, i) in match.like4" :key="i">{{ r }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ✅ 可以保留 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">✅ 可以保留的做法</h2></div>
+          <div class="scroll-body">
+            <ul class="bullet-list good">
+              <li v-for="(r, i) in match.keep" :key="i">{{ r }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ⚠️ 值得留意 -->
+        <div v-if="match" class="scroll-card">
+          <div class="scroll-top"><h2 class="q-title center">⚠️ 值得留意</h2></div>
+          <div class="scroll-body">
+            <ul class="bullet-list warn">
+              <li v-for="(r, i) in match.watch" :key="i">{{ r }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 宫里悄悄话 -->
+        <div v-if="match" class="scroll-card whisper-card">
+          <div class="scroll-top"><h2 class="q-title center">宫里悄悄话</h2></div>
+          <div class="scroll-body">
+            <p class="analysis-text whisper">{{ match.whisper }}</p>
           </div>
         </div>
 
@@ -118,16 +206,6 @@
             <p class="analysis-text">{{ match.evidence }}</p>
             <h3 class="sec-title">强项 / 盲点</h3>
             <p class="analysis-text">{{ match.strengths }}</p>
-          </div>
-        </div>
-
-        <div v-if="match" class="scroll-card">
-          <div class="scroll-top"><h2 class="q-title center">盲点与建议</h2></div>
-          <div class="scroll-body">
-            <h3 class="sec-title">你的盲点</h3>
-            <p class="analysis-text">{{ match.blindspot }}</p>
-            <h3 class="sec-title">给你的建议</h3>
-            <p class="analysis-text advice">{{ match.advice }}</p>
           </div>
         </div>
 
@@ -249,6 +327,43 @@ function goHome() {
   currentIndex.value = 0
   answers.value = []
 }
+
+// ---------- 五维雷达图计算 ----------
+const radarDims = [
+  { key: 'fuyi', label: '依附' },
+  { key: 'zhiji', label: '直给' },
+  { key: 'yuanze', label: '守原则' },
+  { key: 'xiangshang', label: '向上' },
+  { key: 'nonglie', label: '浓烈' },
+]
+const cx = 130
+const cy = 130
+const R = 100
+
+function point(i, val, _padding = 0) {
+  const angle = (Math.PI / 180) * (-90 + i * 72)
+  const r = (val / 5) * R
+  return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) }
+}
+
+function gridPoints(n) {
+  const pts = []
+  for (let i = 0; i < 5; i++) {
+    const p = point(i, n, 0)
+    pts.push(p.x + ',' + p.y)
+  }
+  return pts.join(' ')
+}
+
+const radarPoints = computed(() => {
+  if (!match.value) return ''
+  const pts = []
+  for (let i = 0; i < 5; i++) {
+    const p = point(i, match.value.profile[i], 0)
+    pts.push(p.x + ',' + p.y)
+  }
+  return pts.join(' ')
+})
 
 // ------- 台词弹幕（quiz 阶段底部飘过） -------
 const danmakuList = ref([])
@@ -701,6 +816,71 @@ onBeforeUnmount(() => {
   padding: 10px 14px;
   border-radius: 4px;
 }
+.analysis-text.scenario {
+  font-size: 14.5px;
+  line-height: 2;
+  background: rgba(160, 40, 30, 0.05);
+  border: 1px solid #d4b585;
+  border-radius: 6px;
+  padding: 16px 18px;
+  font-family: 'KaiTi', serif;
+}
+.analysis-text.whisper {
+  font-size: 15px;
+  font-weight: 700;
+  color: #a52620;
+  background: rgba(160, 40, 30, 0.06);
+  border-left: 3px solid #a52620;
+  padding: 14px 18px;
+  border-radius: 6px;
+  font-family: 'KaiTi', serif;
+  line-height: 2;
+}
+
+.bullet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bullet-list li {
+  position: relative;
+  padding: 7px 0 7px 20px;
+  color: #4a3620;
+  font-size: 14px;
+  line-height: 1.8;
+  border-bottom: 1px dashed #e0d6b8;
+}
+.bullet-list li:last-child { border-bottom: none; }
+.bullet-list li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a52620;
+}
+.bullet-list.accent li::before { background: #c0392b; }
+.bullet-list.good li::before { background: #4a8a5a; }
+.bullet-list.warn li::before { background: #d4a017; }
+.whisper-card { border-left: 3px solid #a52620; }
+
+/* 雷达图 */
+.radar-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
+.radar-svg { width: 260px; height: 260px; }
+.radar-grid { fill: none; stroke: rgba(165, 38, 32, 0.2); stroke-width: 1; }
+.radar-axis { stroke: rgba(165, 38, 32, 0.3); stroke-width: 1; }
+.radar-fill { fill-opacity: 0.35; stroke: currentColor; stroke-width: 1.5; }
+.radar-labels { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.radar-label {
+  font-size: 12px;
+  color: #5c1e12;
+  background: rgba(165, 38, 32, 0.08);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.radar-note { text-align: center; font-size: 13px; color: #8a7060; margin: 0; }
 
 /* 简版 Top3 */
 .short-hint {
@@ -840,5 +1020,6 @@ onBeforeUnmount(() => {
   .top3-grid { flex-direction: column; }
   .relation-row { flex-direction: column; }
   .danmaku { font-size: 12px; padding: 5px 10px; }
+  .radar-svg { width: 200px; height: 200px; }
 }
 </style>
